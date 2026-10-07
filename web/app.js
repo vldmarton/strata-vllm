@@ -114,31 +114,32 @@ function renderState(d) {
 function renderMetrics(d) {
   const g = d.gpu || {}, h = d.host || {};
   const gs = d.gpus || [];
-  const multi = gs.length > 1;
-  const per = (f) => gs.map((x) => `GPU ${x.index} ${f(x)}`).join(" · ");
 
   $("m-speed").innerHTML = fmt(d.speed, 1) + `<span class="st-metric__unit">tok/s</span>`;
   $("m-speed-sub").textContent = d.speed_kind === "prefill" ? "prefill" : d.speed_kind === "decode" ? "decode" : "last request";
 
-  $("m-gpu").innerHTML = fmt(g.util) + `<span class="st-metric__unit">%</span>`;
-  $("m-gpu-sub").textContent = multi
-    ? per((x) => (x.util == null ? "–" : `${fmt(x.util)}%`))
-    : (g.name || "no GPU");
-
-  const vramUsed = fmtGB(g.mem_used), vramTot = fmtGB(g.mem_total);
-  $("m-vram").innerHTML = fmt(vramUsed, 1) + (vramTot ? `<span class="st-metric__unit">/ ${fmt(vramTot, 0)} GB</span>` : "");
-  const pfx = d.prefix;
-  $("m-vram-sub").textContent = multi
-    ? per((x) => (x.mem_used == null ? "–" : `${fmt(fmtGB(x.mem_used), 1)} GB`))
-    : ((pfx && pfx.rate !== null && pfx.rate !== undefined) ? `${fmt(pfx.rate * 100, 0)}% prefix cache reuse` : "—");
-  if (vramUsed && vramTot) $("m-vram-bar").style.width = Math.min(100, (vramUsed / vramTot) * 100) + "%";
-
-  $("m-temp").innerHTML = fmt(g.temp) + `<span class="st-metric__unit">°C</span>`;
-  $("m-temp-sub").textContent = multi ? per((x) => (x.temp == null ? "–" : `${fmt(x.temp)}°C`)) : "";
-  $("m-power").innerHTML = fmt(g.power) + `<span class="st-metric__unit">W</span>`;
-  $("m-power-sub").textContent = multi
-    ? per((x) => (x.power == null ? "–" : `${fmt(x.power)} W`))
-    : (g.power_limit ? `of ${fmt(g.power_limit, 0)} W limit` : "—");
+  /* per-GPU cards */
+  const gpuWrap = $("gpu-cards");
+  if (gs.length) {
+    gpuWrap.innerHTML = gs.map((x) => {
+      const u = x.util == null ? null : x.util;
+      const vU = fmtGB(x.mem_used), vT = fmtGB(x.mem_total);
+      return `<div class="st-card gpu-card">
+        <div class="gpu-card__head">
+          <span class="gpu-card__name">GPU ${x.index}</span>
+          <span class="gpu-card__util">${u == null ? "–" : fmt(u) + "%"}</span>
+        </div>
+        <div class="st-progress gpu-card__bar"><div class="st-progress__bar" style="width:${u == null ? 0 : u}%"></div></div>
+        <div class="gpu-card__stats">
+          <span title="VRAM">${fmt(vU,1)}<small>/${fmt(vT,0)} GB</small></span>
+          <span title="Temp">${x.temp == null ? "–" : fmt(x.temp) + "°C"}</span>
+          <span title="Power">${x.power == null ? "–" : fmt(x.power) + " W"}</span>
+        </div>
+      </div>`;
+    }).join("");
+  } else {
+    gpuWrap.innerHTML = "";
+  }
 
   const gen = g.pcie_gen ? "Gen" + g.pcie_gen : "–";
   $("m-pcie").innerHTML = gen + (g.pcie_width ? `<span class="st-metric__unit">x${g.pcie_width}</span>` : "");
@@ -153,9 +154,6 @@ function renderMetrics(d) {
   /* sparklines (60 s of 1 Hz samples) */
   const H = d.history || {};
   sparkline($("s-speed"), H.tok_s, {});
-  sparkline($("s-gpu"), H.gpu, { max: 100 });
-  sparkline($("s-temp"), H.temp, {});
-  sparkline($("s-power"), H.power, {});
   sparkline($("s-pcie"), H.pcie, {});
   sparkline($("s-cpu"), H.cpu, { max: 100 });
   sparkline($("s-disk"), H.disk, {});

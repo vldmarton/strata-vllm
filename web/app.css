@@ -20,6 +20,14 @@ main { flex: 1; min-height: 0; overflow-y: auto; }
 .state-card__row { display: flex; justify-content: space-between; gap: var(--st-s-4); font-size: var(--st-fs-sm);
                    font-weight: var(--st-fw-medium); font-variant-numeric: tabular-nums; }
 .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--st-s-4); }
+#gpu-cards { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--st-s-4); }
+.gpu-card { padding: var(--st-s-4) var(--st-s-5); display: flex; flex-direction: column; gap: 8px; }
+.gpu-card__head { display: flex; justify-content: space-between; align-items: baseline; }
+.gpu-card__name { font-size: var(--st-fs-sm); font-weight: var(--st-fw-bold); color: var(--st-ink); }
+.gpu-card__util { font-size: var(--st-fs-stat); font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1; }
+.gpu-card__bar { margin: 0; }
+.gpu-card__stats { display: flex; justify-content: space-between; font-size: var(--st-fs-xs); color: var(--st-ink-muted); font-variant-numeric: tabular-nums; }
+.gpu-card__stats small { color: var(--st-ink-muted); opacity: .7; }
 .metric-card { padding: var(--st-s-4) var(--st-s-5); }
 .st-metric__value small { font-size: var(--st-fs-md); font-weight: var(--st-fw-medium); color: var(--st-ink-muted); margin-left: 4px; }
 .st-metric__sub { font-size: var(--st-fs-xs); color: var(--st-ink-muted); font-variant-numeric: tabular-nums; min-height: 1em; }

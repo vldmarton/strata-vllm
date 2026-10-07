@@ -111,38 +111,7 @@
           <div id="s-speed"></div>
         </div>
       </div>
-      <div class="st-card metric-card">
-        <div class="st-metric">
-          <span class="st-metric__label"><svg class="st-icon st-icon--sm"><use href="sprite.svg#i-gpu"/></svg>GPU load</span>
-          <span class="st-metric__value" id="m-gpu">–<span class="st-metric__unit">%</span></span>
-          <span class="st-metric__sub" id="m-gpu-sub">—</span>
-          <div id="s-gpu"></div>
-        </div>
-      </div>
-      <div class="st-card metric-card">
-        <div class="st-metric">
-          <span class="st-metric__label"><svg class="st-icon st-icon--sm"><use href="sprite.svg#i-layers"/></svg>VRAM</span>
-          <span class="st-metric__value" id="m-vram">–</span>
-          <span class="st-metric__sub" id="m-vram-sub">—</span>
-          <div class="st-progress" style="margin-top:2px"><div class="st-progress__bar" id="m-vram-bar" style="width:0%"></div></div>
-        </div>
-      </div>
-      <div class="st-card metric-card">
-        <div class="st-metric">
-          <span class="st-metric__label"><svg class="st-icon st-icon--sm"><use href="sprite.svg#i-thermometer"/></svg>GPU temp</span>
-          <span class="st-metric__value" id="m-temp">–<span class="st-metric__unit">°C</span></span>
-          <span class="st-metric__sub" id="m-temp-sub">—</span>
-          <div id="s-temp"></div>
-        </div>
-      </div>
-      <div class="st-card metric-card">
-        <div class="st-metric">
-          <span class="st-metric__label"><svg class="st-icon st-icon--sm"><use href="sprite.svg#i-bolt"/></svg>Power</span>
-          <span class="st-metric__value" id="m-power">–<span class="st-metric__unit">W</span></span>
-          <span class="st-metric__sub" id="m-power-sub">—</span>
-          <div id="s-power"></div>
-        </div>
-      </div>
+      <div id="gpu-cards"></div>
       <div class="st-card metric-card">
         <div class="st-metric">
           <span class="st-metric__label"><svg class="st-icon st-icon--sm"><use href="sprite.svg#i-link"/></svg>PCIe</span>
