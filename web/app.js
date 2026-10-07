@@ -129,12 +129,12 @@ function renderMetrics(d) {
   $("m-vram").innerHTML = fmt(vramUsed, 1) + (vramTot ? `<span class="st-metric__unit">/ ${fmt(vramTot, 0)} GB</span>` : "");
   const pfx = d.prefix;
   $("m-vram-sub").textContent = multi
-    ? per((x) => (x.mem_used == null ? "–" : `${fmtGB(x.mem_used)} GB`))
+    ? per((x) => (x.mem_used == null ? "–" : `${fmt(fmtGB(x.mem_used), 1)} GB`))
     : ((pfx && pfx.rate !== null && pfx.rate !== undefined) ? `${fmt(pfx.rate * 100, 0)}% prefix cache reuse` : "—");
   if (vramUsed && vramTot) $("m-vram-bar").style.width = Math.min(100, (vramUsed / vramTot) * 100) + "%";
 
   $("m-temp").innerHTML = fmt(g.temp) + `<span class="st-metric__unit">°C</span>`;
-  $("m-temp").title = multi ? per((x) => (x.temp == null ? "–" : `${fmt(x.temp)}°C`)) : "";
+  $("m-temp-sub").textContent = multi ? per((x) => (x.temp == null ? "–" : `${fmt(x.temp)}°C`)) : "";
   $("m-power").innerHTML = fmt(g.power) + `<span class="st-metric__unit">W</span>`;
   $("m-power-sub").textContent = multi
     ? per((x) => (x.power == null ? "–" : `${fmt(x.power)} W`))
