@@ -53,3 +53,9 @@ python server.py            # http://localhost:8377
 Create a container from the repository (`docker run` above) or a template with:
 `Network: bridge` (`br0`), port `8377:8377`, GPU `all`, and the data volume
 `/mnt/user/appdata/strata-vllm:/app/data`.
+
+> **Note (bridged `br0` with no port publishing):** on some Unraid setups the
+> containers reach each other directly by IP with no published ports. In that case
+> the dashboard is reached at `http://<container-ip>:8377` (e.g. the IP Docker
+> auto-assigns on `br0`). The container must still be on the same network as your
+> vLLM server so it can poll it.
