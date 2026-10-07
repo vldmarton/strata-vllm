@@ -9,6 +9,7 @@ The frontend polls /api/metrics once per second. No third-party UI framework.
 """
 import asyncio
 import json
+import logging
 import os
 import re
 import time
@@ -31,6 +32,9 @@ HISTORY_LEN = 60          # one sample per second, kept 60 s
 MAX_REQUESTS = 50
 
 app = FastAPI()
+log = logging.getLogger("strata")
+if not log.handlers and not logging.getLogger().handlers:
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
 
 # ------------------------------------------------------------------ config
@@ -259,6 +263,7 @@ def sample():
     # histograms, which only move when a request finishes).
     speed, speed_kind = None, None
     prefill_tok_s = None
+    gen_n = pmt = None
     if dt:
         gen_n = counter_delta("generation_tokens_total", vllm_m)
         pmt = counter_delta("prompt_tokens_total", vllm_m)
@@ -478,7 +483,7 @@ async def _loop():
             try:
                 await asyncio.to_thread(sample)
             except Exception:
-                pass
+                log.exception("metrics sample failed")
             await asyncio.sleep(1.0)
     asyncio.create_task(ticker())
 
