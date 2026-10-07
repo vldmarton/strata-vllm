@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strata · vLLM</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+<link rel="stylesheet" href="app.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%2334d399' d='M12 3L22 8L12 13L2 8Z'/%3E%3Cpath fill='%2334d399' opacity='.6' d='M2 12L12 17L22 12' stroke='%2334d399' stroke-width='2' fill='none'/%3E%3C/svg%3E">
+</head>
+<body>
+
+<header class="st-header">
+  <div class="st-header__brand">Strata</div>
+  <nav class="st-tabs" role="tablist" aria-label="Sections">
+    <button class="st-tab" role="tab" aria-selected="true" data-view="monitor">
+      <svg class="st-icon st-icon--sm"><use href="sprite.svg#i-activity"/></svg>Monitor
+    </button>
+    <button class="st-tab" role="tab" aria-selected="false" data-view="about">
+      <svg class="st-icon st-icon--sm"><use href="sprite.svg#i-info"/></svg>About
+    </button>
+  </nav>
+  <div class="st-header__spacer"></div>
+  <div class="st-pill" id="pill" data-state="idle" title="Server state">
+    <span class="st-pill__dot"></span><span id="pill-text">Idle</span>
+  </div>
+  <button class="st-btn st-btn--icon" id="theme-btn" title="Toggle theme" aria-label="Toggle theme">
+    <svg class="st-icon"><use href="sprite.svg#i-sun" id="theme-icon"/></svg>
+  </button>
+  <button class="st-btn st-btn--icon" id="settings-btn" title="Backend settings" aria-label="Settings">
+    <svg class="st-icon"><use href="sprite.svg#i-settings"/></svg>
+  </button>
+</header>
+
+<main>
+  <!-- ================= monitor ================= -->
+  <section id="view-monitor" class="monitor" role="tabpanel">
+
+    <div class="st-card state-card">
+      <div class="state-card__head">
+        <span class="card-title">Model state</span>
+        <div class="badges" id="state-badges">
+          <span class="st-badge st-badge--idle" data-state="idle">Idle</span>
+          <span class="st-badge st-badge--reading" data-state="reading">Reading</span>
+          <span class="st-badge st-badge--generating" data-state="generating">Generating</span>
+          <span class="st-badge st-badge--queued" data-state="queued">Queued</span>
+          <span class="st-badge st-badge--error" data-state="error">Error</span>
+        </div>
+        <div class="st-header__spacer"></div>
+        <span id="state-label" class="muted">—</span>
+      </div>
+      <div class="state-card__row">
+        <span id="state-detail" class="muted">Connecting…</span>
+        <span id="state-nums"></span>
+      </div>
+      <div class="st-progress" id="state-bar" data-tone="info" hidden>
+        <div class="st-progress__bar" id="state-bar-fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div id="no-backend" class="st-card" hidden>
+      <div class="st-metric">
+        <span class="st-metric__label"><svg class="st-icon st-icon--sm"><use href="sprite.svg#i-link"/></svg>Backend not configured</span>
+        <span class="st-metric__sub" style="font-size:var(--st-fs-md)">
+          Open <strong>Settings</strong> (top right) and enter the URL of your vLLM server,
+          e.g. <code style="font-family:var(--st-font-mono)">http://192.168.0.106:8000</code>.
+        </span>
+        <div style="margin-top:8px"><button class="st-btn st-btn--primary" id="no-backend-btn">Open settings</button></div>
+      </div>
+    </div>
+
+    <div class="metrics" id="metrics">
+      <div class="st-card metric-card">
+        <div class="st-metric">
+          <span class="st-metric__label"><svg class="st-icon st-icon--sm"><use href="sprite.svg#i-gauge"/></svg>Speed</span>
+          <span class="st-metric__value" id="m-speed">–<span class="st-metric__unit">tok/s</span></span>
+          <span class="st-metric__sub" id="m-speed-sub">—</span>
+          <div id="s-speed"></div>
+        </div>
+      </div>
+      <div class="st-card metric-card">
+        <div class="st-metric">
+          <span class="st-metric__label"><svg class="st-icon st-icon--sm"><use href="sprite.svg#i-gpu"/></svg>GPU load</span>
+          <span class="st-metric__value" id="m-gpu">–<span class="st-metric__unit">%</span></span>
+          <span class="st-metric__sub" id="m-gpu-sub">—</span>
+          <div id="s-gpu"></div>
+        </div>
+      </div>
+      <div class="st-card metric-card">
+        <div class="st-metric">
+          <span class="st-metric__label"><svg class="st-icon st-icon--sm"><use href="sprite.svg#i-layers"/></svg>VRAM</span>
+          <span class="st-metric__value" id="m-vram">–</span>
+          <span class="st-metric__sub" id="m-vram-sub">—</span>
+          <div class="st-progress" style="margin-top:2px"><div class="st-progress__bar" id="m-vram-bar" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div class="st-card metric-card">
+        <div class="st-metric">
+          <span class="st-metric__label"><svg class="st-icon st-icon--sm"><use href="sprite.svg#i-thermometer"/></svg>GPU temp</span>
+          <span class="st-metric__value" id="m-temp">–<span class="st-metric__unit">°C</span></span>
+          <div id="s-temp"></div>
+        </div>
+      </div>
+      <div class="st-card metric-card">
+        <div class="st-metric">
+          <span class="st-metric__label"><svg class="st-icon st-icon--sm"><use href="sprite.svg#i-bolt"/></svg>Power</span>
+          <span class="st-metric__value" id="m-power">–<span class="st-metric__unit">W</span></span>
+          <span class="st-metric__sub" id="m-power-sub">—</span>
+          <div id="s-power"></div>
+        </div>
+      </div>
+      <div class="st-card metric-card">
+        <div class="st-metric">
+          <span class="st-metric__label"><svg class="st-icon st-icon--sm"><use href="sprite.svg#i-link"/></svg>PCIe</span>
+          <span class="st-metric__value" id="m-pcie">–</span>
+          <span class="st-metric__sub" id="m-pcie-sub">—</span>
+          <div id="s-pcie"></div>
+        </div>
+      </div>
+      <div class="st-card metric-card">
+        <div class="st-metric">
+          <span class="st-metric__label"><svg class="st-icon st-icon--sm"><use href="sprite.svg#i-cpu"/></svg>CPU</span>
+          <span class="st-metric__value" id="m-cpu">–<span class="st-metric__unit">%</span></span>
+          <span class="st-metric__sub" id="m-cpu-sub">—</span>
+          <div id="s-cpu"></div>
+        </div>
+      </div>
+      <div class="st-card metric-card">
+        <div class="st-metric">
+          <span class="st-metric__label"><svg class="st-icon st-icon--sm"><use href="sprite.svg#i-disk"/></svg>Disk read</span>
+          <span class="st-metric__value" id="m-disk">–<span class="st-metric__unit">MB/s</span></span>
+          <span class="st-metric__sub" id="m-disk-sub">—</span>
+          <div id="s-disk"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="monitor-row">
+      <div class="st-card ctx-card">
+        <span class="card-title">Context fill</span>
+        <div class="ctx-gauge">
+          <div id="ctx-gauge"></div>
+          <div class="ctx-gauge__label">
+            <span class="ctx-gauge__pct" id="ctx-pct">–</span>
+            <span class="muted" id="ctx-range"></span>
+          </div>
+        </div>
+        <div class="bar-row"><span>System RAM</span><span id="ctx-ram-nums">–</span></div>
+        <div class="st-progress" id="ctx-ram" data-tone="danger"><div class="st-progress__bar" id="ctx-ram-bar" style="width:0%"></div></div>
+        <div class="bar-row"><span>GPU temperature</span><span id="ctx-temp-nums">–</span></div>
+        <div class="st-progress" id="ctx-temp" data-tone="warn"><div class="st-progress__bar" id="ctx-temp-bar" style="width:0%"></div></div>
+        <div class="bar-row"><span>Prefix cache</span><span id="ctx-pfx-nums">–</span></div>
+        <div class="st-progress" id="ctx-pfx" data-tone="info"><div class="st-progress__bar" id="ctx-pfx-bar" style="width:0%"></div></div>
+      </div>
+
+      <div class="st-card req-card">
+        <div class="req-head">
+          <span class="card-title">Recent requests</span>
+          <p class="req-totals" id="req-totals"></p>
+        </div>
+        <div class="table-wrap">
+          <table class="st-table">
+            <thead>
+              <tr><th>Time</th><th>Status</th><th class="num">Prompt</th><th class="num">Reused</th><th class="num">Output</th><th class="num">Tok/s</th><th class="num">Duration</th></tr>
+            </thead>
+            <tbody id="req-rows">
+              <tr><td colspan="7" class="muted">Waiting for requests…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= about ================= -->
+  <section id="view-about" class="about" role="tabpanel" hidden>
+    <div class="st-card">
+      <span class="card-title" style="font-size:var(--st-fs-xl)">Strata for vLLM</span>
+      <p class="muted">A small local dashboard for vLLM inference servers. GPU, host and server metrics are
+      sampled once per second and rendered with no frontend framework. The backend endpoint and an optional
+      API key are configured in Settings and stored in the container's data volume.</p>
+      <dl class="facts">
+        <dt>Model</dt><dd id="about-model">—</dd>
+        <dt>vLLM version</dt><dd id="about-version">—</dd>
+        <dt>Backend</dt><dd id="about-backend">—</dd>
+        <dt>Refresh</dt><dd>1 s · 60 s of history kept</dd>
+        <dt>Data</dt><dd>GPU via NVML, server via <code style="font-family:var(--st-font-mono)">/metrics</code>, host via <code style="font-family:var(--st-font-mono)">/proc</code></dd>
+      </dl>
+      <p class="small muted">UI inspired by <a href="https://github.com/Niko1221/Strata" rel="noopener">Strata</a> by Niko1221 (MIT).
+      Fonts: Outfit (SIL OFL 1.1).</p>
+    </div>
+  </section>
+</main>
+
+<!-- settings drawer -->
+<div class="scrim" id="scrim" hidden></div>
+<aside class="st-drawer" id="drawer" data-open="false" aria-label="Backend settings">
+  <div class="st-drawer__head">
+    <span class="card-title">Backend settings</span>
+    <button class="st-btn st-btn--icon" id="drawer-close" aria-label="Close">
+      <svg class="st-icon"><use href="sprite.svg#i-chevron" style="transform:rotate(-90deg)"/></svg>
+    </button>
+  </div>
+  <div class="st-drawer__body">
+    <label class="st-field">
+      <span class="st-label">vLLM endpoint</span>
+      <input class="st-input" id="set-backend" type="text" spellcheck="false"
+             placeholder="http://192.168.0.106:8000" autocomplete="off">
+    </label>
+    <label class="st-field">
+      <span class="st-label">API key <span class="muted">(optional)</span></span>
+      <input class="st-input" id="set-key" type="password" spellcheck="false"
+             placeholder="sent as Bearer token" autocomplete="off">
+    </label>
+    <div class="drawer-actions">
+      <button class="st-btn st-btn--secondary" id="set-clear" type="button">Clear</button>
+      <button class="st-btn st-btn--primary" id="set-save" type="button">Save &amp; connect</button>
+    </div>
+    <p class="small muted">The dashboard talks to the vLLM server directly from this container.
+    Use the LAN address of the vLLM host, e.g. <code style="font-family:var(--st-font-mono)">http://192.168.0.106:8000</code>.</p>
+  </div>
+</aside>
+
+<div class="st-toasts" id="toasts"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
