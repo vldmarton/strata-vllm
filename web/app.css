@@ -133,4 +133,7 @@ main { flex: 1; min-height: 0; overflow-y: auto; }
   .monitor, .about { padding: var(--st-s-4); }
   .facts { grid-template-columns: 1fr; gap: 2px; }
   .facts dd { margin-bottom: var(--st-s-2); }
+  .gpu-card__stats { font-size: var(--st-fs-sm); }
+  .gpu-card__util { font-size: var(--st-fs-xl); }
+  .st-metric__value { font-size: var(--st-fs-xl); }
 }

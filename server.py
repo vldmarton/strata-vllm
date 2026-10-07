@@ -23,6 +23,22 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
+# Assets are referenced with a ?v= cache-buster in index.html; cache them
+# for a week. HTML itself must never be cached, or a stale index.html
+# points at old asset versions (this bit us on iOS Safari).
+_LONG_LIVED = (".css", ".js", ".svg", ".woff2", ".woff", ".png", ".ico")
+
+
+class DashboardFiles(StaticFiles):
+    async def get_response(self, path: str, scope):
+        response = await super().get_response(path, scope)
+        ext = "." + path.rsplit(".", 1)[-1] if "." in path else ""
+        if ext in _LONG_LIVED:
+            response.headers["Cache-Control"] = "public, max-age=604800"
+        else:
+            response.headers["Cache-Control"] = "no-cache"
+        return response
+
 PORT = int(os.environ.get("PORT", "8377"))
 DATA_DIR = Path(os.environ.get("DATA_DIR", "/app/data"))
 CONFIG_FILE = DATA_DIR / "config.json"
@@ -536,7 +552,7 @@ async def _loop():
     asyncio.create_task(ticker())
 
 
-app.mount("/", StaticFiles(directory=WEB_DIR, html=True), name="web")
+app.mount("/", DashboardFiles(directory=WEB_DIR, html=True), name="web")
 
 if __name__ == "__main__":
     import uvicorn
