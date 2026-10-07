@@ -300,7 +300,6 @@ function esc(s) {
   return String(s).replace(/[&<>"']/g, (c) => (
     { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
-function timeStr(t) { return new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); }
 
 /* ------------------------------------------------------- markdown (mini) */
 function mdInline(s) {
