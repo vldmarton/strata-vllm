@@ -51,6 +51,7 @@ STATE = {
     "history": {k: deque(maxlen=HISTORY_LEN) for k in
                 ("tok_s", "gpu", "vram", "temp", "power", "pcie", "cpu", "disk")},
     "requests": deque(maxlen=MAX_REQUESTS),
+    "active": [],         # in-flight requests (tracked via num_requests_running)
     "prev": {},            # counter bookkeeping for vLLM + host rates
     "last_sample": 0.0,
     "last_error": "",
@@ -115,8 +116,18 @@ def parse_metrics(text):
             elif name.endswith("_sum") or name.endswith("_count"):
                 out[name] = value
             elif "engine" in labels or not labels:
-                out.setdefault(name, value)
+                # same name with orthogonal labels (e.g. finished_reason): sum
+                out[name] = out.get(name, 0.0) + value
     return out
+
+
+def _fmt_dur(seconds):
+    seconds = int(seconds)
+    if seconds >= 3600:
+        return f"{seconds // 3600}h {(seconds % 3600) // 60}m"
+    if seconds >= 60:
+        return f"{seconds // 60}m {seconds % 60}s"
+    return f"{seconds}s"
 
 
 def counter_delta(key, m):
@@ -239,48 +250,55 @@ def sample():
         pass
 
     # vLLM-derived values
-    running = vllm_m.get("num_requests_running")
-    waiting = vllm_m.get("num_requests_waiting")
+    running = int(vllm_m.get("num_requests_running") or 0)
+    waiting = int(vllm_m.get("num_requests_waiting") or 0)
     kv = vllm_m.get("kv_cache_usage_perc")
-    decode_tok_s, prefill_tok_s = None, None
+
+    # Live per-second token throughput from monotonic counters — these tick
+    # continuously while a request runs (unlike the per-request completion
+    # histograms, which only move when a request finishes).
+    speed, speed_kind = None, None
+    prefill_tok_s = None
     if dt:
-        dec_n = counter_delta("request_decode_time_seconds_count", vllm_m)
-        dec_t = counter_delta("request_decode_time_seconds_sum", vllm_m)
-        if dec_n and dec_t and dec_t > 0:
-            decode_tok_s = dec_n / dec_t
-        ttft_n = counter_delta("time_to_first_token_seconds_count", vllm_m)
-        ttft_t = counter_delta("time_to_first_token_seconds_sum", vllm_m)
+        gen_n = counter_delta("generation_tokens_total", vllm_m)
         pmt = counter_delta("prompt_tokens_total", vllm_m)
-        if ttft_n and ttft_t and ttft_t > 0 and pmt:
-            prefill_tok_s = pmt / ttft_t
+        if gen_n and gen_n > 0:
+            speed, speed_kind = gen_n / dt, "decode"
+        if pmt and pmt > 0:
+            prefill_tok_s = pmt / dt
         pcie_n = counter_delta("estimated_read_bytes_per_gpu_total", vllm_m)
         pcie_mb = pcie_n / dt / 1e6 if pcie_n is not None else None
     else:
         pcie_mb = None
-    counter_delta("generation_tokens_total", vllm_m)
-    counter_delta("prefix_cache_hits_total", vllm_m)
-    counter_delta("prefix_cache_queries_total", vllm_m)
 
-    # a finished request: the per-request histograms each tick up by one completion
-    if dt:
-        done_n = counter_delta("request_success_total", vllm_m)
-        if done_n and done_n >= 1:
-            prompt = counter_delta("request_prompt_tokens_sum", vllm_m)
-            out_tok = counter_delta("request_generation_tokens_sum", vllm_m)
-            infl = counter_delta("request_inference_time_seconds_sum", vllm_m)
-            prefill = counter_delta("request_prefill_time_seconds_sum", vllm_m)
-            decode = counter_delta("request_decode_time_seconds_sum", vllm_m)
-            cached = counter_delta("prompt_tokens_cached_total", vllm_m)
-            if out_tok is not None and infl is not None:
-                STATE["requests"].appendleft({
-                    "time": time.time(),
-                    "prompt": int(prompt or 0),
-                    "reused": int(min(cached or 0, (prompt or 0))),
-                    "output": int(out_tok),
-                    "tok_s": (out_tok / decode) if decode and decode > 0 else None,
-                    "prefill_s": prefill,
-                    "duration": infl,
-                })
+    # In-flight requests: vLLM exposes no per-request progress, so we track
+    # how long a generation has been running (num_requests_running > 0).
+    # Prompt/output/elapsed of the in-flight set come from counter deltas.
+    prev_running = len(STATE["active"])
+    if running:
+        while len(STATE["active"]) < running:
+            STATE["active"].append({"start": time.time(), "prompt": 0, "output": 0})
+        while len(STATE["active"]) > running:  # preemptions / drops
+            STATE["active"].pop()
+        for a in STATE["active"]:
+            a["prompt"] += int(pmt or 0)
+            a["output"] += int(gen_n or 0)
+    else:
+        # every tracked request just finished: fold into the requests log
+        for a in STATE["active"]:
+            dur = time.time() - a["start"]
+            STATE["requests"].appendleft({
+                "time": time.time(),
+                "prompt": a["prompt"],
+                "reused": 0,
+                "output": a["output"],
+                "tok_s": (a["output"] / dur) if dur > 0 else None,
+                "prefill_s": None,
+                "duration": dur,
+            })
+        STATE["active"] = []
+    if not running:
+        counter_delta("request_success_total", vllm_m)  # keep bookkeeping warm
 
     # slow-changing model info (re-fetch after a backend change or a fresh start)
     if not STATE["last_error"] and not STATE["vllm"].get("id"):
@@ -293,10 +311,11 @@ def sample():
     g0 = gpu.get(0) if gpu else None
     STATE["live"] = {
         "running": running, "waiting": waiting, "kv": kv,
-        "decode_tok_s": decode_tok_s, "prefill_tok_s": prefill_tok_s, "pcie_mb": pcie_mb,
+        "speed": speed, "speed_kind": speed_kind, "prefill_tok_s": prefill_tok_s,
+        "pcie_mb": pcie_mb,
     }
     if dt:  # first tick has no rate: don't pollute the sparklines with zeros
-        hist["tok_s"].append(decode_tok_s)
+        hist["tok_s"].append(speed)
         hist["gpu"].append(g0["util"] if g0 else None)
         hist["vram"].append(g0["mem_used"] if g0 else None)
         hist["temp"].append(g0["temp"] if g0 else None)
@@ -306,9 +325,13 @@ def sample():
         hist["disk"].append(host["disk_read"] if host else None)
 
     STATE["prefix"] = {
-        "hits": STATE["prev"].get("prefix_cache_hits_total"),
-        "queries": STATE["prev"].get("prefix_cache_queries_total"),
+        "hits": counter_delta("prefix_cache_hits_total", vllm_m),
+        "queries": counter_delta("prefix_cache_queries_total", vllm_m),
     }
+    # rolling reuse ratio (last 60 s) instead of cumulative-since-boot
+    if STATE["prefix"]["hits"] is not None and STATE["prefix"]["queries"]:
+        STATE.setdefault("reuse", deque(maxlen=HISTORY_LEN)).append(
+            STATE["prefix"]["hits"] / STATE["prefix"]["queries"])
 
 
 # ------------------------------------------------------------------ API
@@ -328,6 +351,8 @@ def set_settings(body: dict):
     save_config(cfg)
     STATE["vllm"] = {}          # the backend changed: re-fetch model info
     STATE["prev"] = {}          # counter history is meaningless across backends
+    STATE["active"] = []        # in-flight tracking restarts
+    STATE.pop("reuse", None)
     STATE["last_sample"] = 0.0
     for q in STATE["history"].values():
         q.clear()
@@ -351,19 +376,29 @@ def metrics():
 
     running, waiting, kv = live.get("running") or 0, live.get("waiting") or 0, live.get("kv")
     last_req = s["requests"][0] if s["requests"] else None
-    decode = live.get("decode_tok_s")
-    prefill = live.get("prefill_tok_s")
-    speed = prefill if (prefill and not decode) else (decode if decode else (last_req["tok_s"] if last_req else None))
-    speed_kind = "prefill" if (prefill and not decode) else ("decode" if decode else "last request")
+    active = s.get("active", [])
+
+    speed = live.get("speed")
+    speed_kind = live.get("speed_kind") or "last request"
+    if speed is None and last_req and last_req.get("tok_s"):
+        speed = last_req["tok_s"]
+        speed_kind = "last request"
 
     state = "generating" if running else "queued" if waiting else "idle"
-    if running and prefill and not decode:
-        state = "reading"
-    if state == "generating":
-        detail = f"Generating · {running} running" + (f" · {decode:.1f} tok/s" if decode else "")
-    elif state == "reading":
-        detail = f"Reading prompt · {running} running" + (f" · {prefill:,.0f} tok/s" if prefill else "")
-    elif state == "queued":
+    if running:
+        out_now = sum(a["output"] for a in active)
+        elapsed = min(a["start"] for a in active) if active else None
+        bits = []
+        if running > 1:
+            bits.append(f"{running} running")
+        if out_now:
+            bits.append(f"{out_now:,} tokens out")
+        if elapsed:
+            bits.append(_fmt_dur(time.time() - elapsed) + " running")
+        if speed:
+            bits.append(f"{speed:.1f} tok/s")
+        detail = " · ".join(bits) if bits else "Generating"
+    elif waiting:
         detail = f"{waiting} waiting"
     else:
         detail = (f"last: {last_req['output']:,} tokens at {last_req['tok_s']:.1f} tok/s"
@@ -420,8 +455,7 @@ def metrics():
         "ctx_used": used,
         "prefix": {
             "hits": prefix.get("hits"), "queries": prefix.get("queries"),
-            "rate": (prefix["hits"] / prefix["queries"])
-                    if prefix.get("hits") is not None and prefix.get("queries") else None,
+            "rate": (sum(s["reuse"]) / len(s["reuse"])) if s.get("reuse") else None,
         },
         "requests": reqs,
         "history": {k: [None if v is None else round(v, 2) for v in s["history"][k]]

@@ -100,7 +100,7 @@ function renderState(d) {
   $("state-detail").textContent = d.detail || "—";
   $("state-nums").textContent = "";
   const bar = $("state-bar");
-  if (st === "reading" && d.kv !== null && d.kv !== undefined && d.model && d.model.max_ctx) {
+  if ((st === "generating" || st === "reading") && d.kv !== null && d.kv !== undefined && d.model && d.model.max_ctx) {
     bar.hidden = false;
     const used = d.ctx_used || 0;
     $("state-bar-fill").style.width = Math.min(100, (used / d.model.max_ctx) * 100) + "%";
@@ -122,7 +122,9 @@ function renderMetrics(d) {
 
   const vramUsed = fmtGB(g.mem_used), vramTot = fmtGB(g.mem_total);
   $("m-vram").innerHTML = fmt(vramUsed, 1) + (vramTot ? `<span class="st-metric__unit">/ ${fmt(vramTot, 0)} GB</span>` : "");
-  $("m-vram-sub").textContent = d.prefix && d.prefix.queries ? `${fmt(d.prefix.hits)} prefix hits` : "—";
+  const pfx = d.prefix;
+  $("m-vram-sub").textContent = (pfx && pfx.rate !== null && pfx.rate !== undefined)
+    ? `${fmt(pfx.rate * 100, 0)}% prefix cache reuse` : "—";
   if (vramUsed && vramTot) $("m-vram-bar").style.width = Math.min(100, (vramUsed / vramTot) * 100) + "%";
 
   $("m-temp").innerHTML = fmt(g.temp) + `<span class="st-metric__unit">°C</span>`;
