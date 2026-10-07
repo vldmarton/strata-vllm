@@ -324,7 +324,7 @@ def sample():
         hist["gpu"].append(g0["util"] if g0 else None)
         hist["vram"].append(g0["mem_used"] if g0 else None)
         hist["temp"].append(g0["temp"] if g0 else None)
-        hist["power"].append(g0["power"] if g0 else None)
+        hist["power"].append(sum(x["power"] for x in gpu.values() if x.get("power") is not None) if gpu else None)
         hist["pcie"].append(pcie_mb)
         hist["cpu"].append(host["cpu"] if host else None)
         hist["disk"].append(host["disk_read"] if host else None)
@@ -476,8 +476,8 @@ def metrics():
             "mem_used": g0["mem_used"] if g0 else None,
             "mem_total": g0["mem_total"] if g0 else None,
             "temp": g0["temp"] if g0 else None,
-            "power": g0["power"] if g0 else None,
-            "power_limit": g0["power_limit"] if g0 else None,
+            "power": sum(x["power"] for x in gpu.values() if x.get("power") is not None) if gpu else None,
+            "power_limit": sum(x["power_limit"] for x in gpu.values() if x.get("power_limit") is not None) if gpu else None,
             "pcie_gen": (g0.get("pcie_gen") or g0.get("pcie_gen_max")) if g0 else None,
             "pcie_gen_max": g0.get("pcie_gen_max") if g0 else None,
             "pcie_width": g0.get("pcie_width") if g0 else None,

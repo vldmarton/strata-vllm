@@ -141,7 +141,16 @@ function renderMetrics(d) {
     gpuWrap.innerHTML = "";
   }
 
-  const gen = g.pcie_gen ? "Gen" + g.pcie_gen : "–";
+  const multi = gs.length > 1;
+  const per = (fn) => gs.map(fn).join(" · ");
+
+  /* total power (sum of all GPUs) */
+  $("m-power").innerHTML = fmt(g.power) + `<span class="st-metric__unit">W</span>`;
+  $("m-power-sub").textContent = multi
+    ? per((x) => (x.power == null ? "–" : `${fmt(x.power)} W`))
+    : (g.power_limit ? `of ${fmt(g.power_limit, 0)} W limit` : "—");
+
+  const gen = g.pcie_gen ? "Gen"+g.pcie_gen : "–";
   $("m-pcie").innerHTML = gen + (g.pcie_width ? `<span class="st-metric__unit">x${g.pcie_width}</span>` : "");
   $("m-pcie-sub").textContent = g.pcie_mb !== null && g.pcie_mb !== undefined ? `to GPU ${fmt(g.pcie_mb, 2)} MB/s` : "—";
 
@@ -155,6 +164,7 @@ function renderMetrics(d) {
   const H = d.history || {};
   sparkline($("s-speed"), H.tok_s, {});
   sparkline($("s-pcie"), H.pcie, {});
+  sparkline($("s-power"), H.power, {});
   sparkline($("s-cpu"), H.cpu, { max: 100 });
   sparkline($("s-disk"), H.disk, {});
 

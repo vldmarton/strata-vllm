@@ -20,7 +20,7 @@ main { flex: 1; min-height: 0; overflow-y: auto; }
 .state-card__row { display: flex; justify-content: space-between; gap: var(--st-s-4); font-size: var(--st-fs-sm);
                    font-weight: var(--st-fw-medium); font-variant-numeric: tabular-nums; }
 .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--st-s-4); }
-#gpu-cards { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--st-s-4); }
+#gpu-cards { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: var(--st-s-4); }
 .gpu-card { padding: var(--st-s-4) var(--st-s-5); display: flex; flex-direction: column; gap: 8px; }
 .gpu-card__head { display: flex; justify-content: space-between; align-items: baseline; }
 .gpu-card__name { font-size: var(--st-fs-sm); font-weight: var(--st-fw-bold); color: var(--st-ink); }
