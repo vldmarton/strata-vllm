@@ -96,3 +96,21 @@ a{color:var(--st-accent-text);text-decoration:none} a:hover{text-decoration:unde
 .st-toast--warn .st-icon{color:var(--st-warn)}
 .st-toast--error .st-icon{color:var(--st-danger)}
 .st-toasts{position:fixed;right:20px;bottom:20px;display:flex;flex-direction:column;gap:10px;z-index:50}
+
+/* collapsible — <details class="st-collapse"><summary>…</summary><div class="st-collapse__body">…</div></details> */
+.st-collapse{border:1px solid var(--st-line);border-radius:var(--st-r-md);background:var(--st-surface-2)}
+.st-collapse>summary{list-style:none;display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;font-size:var(--st-fs-sm);font-weight:500;color:var(--st-ink-muted)}
+.st-collapse>summary::-webkit-details-marker{display:none}
+.st-collapse>summary .st-chev{margin-left:auto;transition:transform var(--st-dur) var(--st-ease)}
+.st-collapse[open]>summary .st-chev{transform:rotate(180deg)}
+.st-collapse__body{padding:0 14px 14px;font-size:var(--st-fs-sm);color:var(--st-ink-muted);line-height:1.6}
+
+/* code */
+.st-code{border-radius:var(--st-r-md);background:var(--st-code-bg);color:var(--st-code-ink);overflow:hidden}
+.st-code__head{display:flex;align-items:center;justify-content:space-between;padding:8px 8px 8px 14px;font:500 var(--st-fs-xs)/1 var(--st-font);color:#9aa3ab;border-bottom:1px solid rgba(255,255,255,.06)}
+.st-code pre{margin:0;padding:14px;overflow:auto;font:400 13px/1.6 var(--st-font-mono)}
+.st-code .st-btn--icon{color:#9aa3ab}
+.st-code .st-btn--icon:hover{background:rgba(255,255,255,.08);color:#fff}
+
+/* slider */
+.st-slider{width:100%;accent-color:var(--st-accent)}

@@ -14,7 +14,10 @@
 <header class="st-header">
   <div class="st-header__brand">Strata</div>
   <nav class="st-tabs" role="tablist" aria-label="Sections">
-    <button class="st-tab" role="tab" aria-selected="true" data-view="monitor">
+    <button class="st-tab" role="tab" aria-selected="true" data-view="chat">
+      <svg class="st-icon st-icon--sm"><use href="sprite.svg#i-chat"/></svg>Chat
+    </button>
+    <button class="st-tab" role="tab" aria-selected="false" data-view="monitor">
       <svg class="st-icon st-icon--sm"><use href="sprite.svg#i-activity"/></svg>Monitor
     </button>
     <button class="st-tab" role="tab" aria-selected="false" data-view="about">
@@ -34,8 +37,37 @@
 </header>
 
 <main>
+  <!-- ================= chat ================= -->
+  <section id="view-chat" class="view--chat" role="tabpanel">
+    <div class="chat-scroll" id="chat-scroll">
+      <div class="chat" id="chat">
+        <div class="chat-empty" id="chat-empty">
+          <div class="chat-empty__title">Ask anything</div>
+          <div class="chat-empty__sub" id="chat-empty-sub">Served by vLLM on your homelab.</div>
+        </div>
+      </div>
+    </div>
+    <div class="composer-wrap">
+      <form class="st-composer" id="composer">
+        <textarea id="input" rows="2" placeholder="Ask anything&hellip;" aria-label="Message"></textarea>
+        <div class="st-composer__bar">
+          <button type="button" class="st-btn st-btn--icon" id="new-btn" title="New chat" aria-label="New chat">
+            <svg class="st-icon"><use href="sprite.svg#i-new-chat"/></svg></button>
+          <button type="button" class="st-btn st-btn--icon" id="sampling-btn" title="Sampling" aria-label="Sampling">
+            <svg class="st-icon"><use href="sprite.svg#i-settings"/></svg></button>
+          <span class="spacer"></span>
+          <span class="composer-hint" id="composer-hint"></span>
+          <button type="button" class="st-btn st-btn--secondary" id="stop-btn" hidden>
+            <svg class="st-icon st-icon--sm"><use href="sprite.svg#i-stop"/></svg>Stop</button>
+          <button type="submit" class="st-btn st-btn--primary st-btn--send" id="send-btn" aria-label="Send">
+            <svg class="st-icon"><use href="sprite.svg#i-send"/></svg></button>
+        </div>
+      </form>
+    </div>
+  </section>
+
   <!-- ================= monitor ================= -->
-  <section id="view-monitor" class="monitor" role="tabpanel">
+  <section id="view-monitor" class="monitor" role="tabpanel" hidden>
 
     <div class="st-card state-card">
       <div class="state-card__head">
@@ -219,6 +251,35 @@
     </div>
     <p class="small muted">The dashboard talks to the vLLM server directly from this container.
     Use the LAN address of the vLLM host, e.g. <code style="font-family:var(--st-font-mono)">http://192.168.0.106:8000</code>.</p>
+  </div>
+</aside>
+
+<!-- sampling drawer -->
+<aside class="st-drawer" id="s-drawer" data-open="false" aria-label="Sampling">
+  <div class="st-drawer__head">
+    <span class="card-title">Sampling</span>
+    <button class="st-btn st-btn--icon" id="s-drawer-close" aria-label="Close">
+      <svg class="st-icon"><use href="sprite.svg#i-chevron" style="transform:rotate(-90deg)"/></svg>
+    </button>
+  </div>
+  <div class="st-drawer__body">
+    <div class="st-field">
+      <label class="st-label" for="s-temp">Temperature <output id="o-temp"></output></label>
+      <input class="st-slider" type="range" id="s-temp" min="0" max="1.5" step="0.05">
+      <span class="muted small">0 = always the most likely word (exact, repeatable)</span>
+    </div>
+    <div class="st-field">
+      <label class="st-label" for="s-topp">Top-p <output id="o-topp"></output></label>
+      <input class="st-slider" type="range" id="s-topp" min="0.05" max="1" step="0.05">
+    </div>
+    <div class="st-field">
+      <label class="st-label" for="s-max">Max tokens <output>empty = until done</output></label>
+      <input class="st-input" id="s-max" type="number" min="1" step="1" placeholder="Until done">
+    </div>
+    <div class="drawer-actions">
+      <button class="st-btn st-btn--secondary" id="s-reset" type="button">Reset</button>
+      <button class="st-btn st-btn--primary" id="s-apply" type="button">Apply</button>
+    </div>
   </div>
 </aside>
 

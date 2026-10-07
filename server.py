@@ -20,7 +20,7 @@ import psutil
 import pynvml
 import requests
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 PORT = int(os.environ.get("PORT", "8377"))
@@ -363,6 +363,49 @@ def set_settings(body: dict):
         q.clear()
     sample()
     return {"ok": True}
+
+
+@app.post("/api/chat")
+async def chat(body: dict):
+    """Stream a chat completion from the configured vLLM backend (SSE passthrough)."""
+    cfg = STATE["cfg"]
+    if not cfg.get("backend"):
+        return JSONResponse({"error": {"message": "no backend configured"}}, status_code=400)
+    base = cfg["backend"].rstrip("/")
+    headers = {"Content-Type": "application/json"}
+    if cfg.get("key"):
+        headers["Authorization"] = "Bearer " + cfg["key"]
+    payload = {
+        "model": body.get("model") or STATE.get("vllm", {}).get("id") or "default",
+        "messages": body.get("messages") or [],
+        "stream": True,
+        "stream_options": {"include_usage": True},
+    }
+    if body.get("temperature") is not None:
+        payload["temperature"] = body["temperature"]
+    if body.get("top_p") is not None:
+        payload["top_p"] = body["top_p"]
+    if body.get("max_tokens"):
+        payload["max_tokens"] = body["max_tokens"]
+
+    def gen():
+        try:
+            with requests.post(base + "/v1/chat/completions", headers=headers,
+                               json=payload, stream=True, timeout=(10, 600)) as r:
+                if r.status_code != 200:
+                    try:
+                        msg = r.json().get("error", {}).get("message") or f"HTTP {r.status_code}"
+                    except Exception:
+                        msg = f"HTTP {r.status_code}"
+                    yield "data: " + json.dumps({"error": {"message": msg}}) + "\n"
+                    return
+                for line in r.iter_lines(decode_unicode=True):
+                    if line:
+                        yield line + "\n"
+        except Exception as e:
+            yield "data: " + json.dumps({"error": {"message": str(e)}}) + "\n"
+
+    return StreamingResponse(gen(), media_type="text/event-stream")
 
 
 @app.get("/api/metrics")

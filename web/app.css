@@ -59,6 +59,58 @@ main { flex: 1; min-height: 0; overflow-y: auto; }
 .st-toast { animation: toast-in 180ms var(--st-ease); }
 @keyframes toast-in { from { opacity: 0; transform: translateY(6px); } }
 
+/* ---------------------------------------------------------------- chat */
+.view--chat { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+.chat-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+.chat { max-width: 860px; margin: 0 auto; padding: var(--st-s-8) var(--st-s-6) var(--st-s-6); display: flex;
+        flex-direction: column; gap: var(--st-s-6); }
+.chat-empty { margin: 12vh auto 0; text-align: center; }
+.chat-empty__title { font-weight: var(--st-fw-black); font-size: var(--st-fs-display); line-height: var(--st-lh-tight);
+                     letter-spacing: -.02em; }
+.chat-empty__sub { margin-top: var(--st-s-3); color: var(--st-ink-muted); }
+.st-msg { width: 100%; display: flex; flex-direction: column; gap: 6px; max-width: 720px; }
+.st-msg--user { align-self: flex-end; align-items: flex-end; }
+.st-msg--assistant { align-self: flex-start; }
+.st-bubble { padding: 12px 16px; border-radius: var(--st-r-lg); font-size: var(--st-fs-base); line-height: 1.55;
+             color: var(--st-ink-soft); }
+.st-msg--user .st-bubble { background: var(--st-accent); color: var(--st-accent-ink); border-bottom-right-radius: 6px;
+                           white-space: pre-wrap; overflow-wrap: anywhere; }
+.st-msg--assistant .st-bubble { background: var(--st-surface); border: 1px solid var(--st-line); border-bottom-left-radius: 6px; }
+.st-bubble > :first-child { margin-top: 0; }
+.st-bubble > :last-child { margin-bottom: 0; }
+.st-bubble p, .st-bubble ul, .st-bubble ol { margin: 0 0 var(--st-s-3); }
+.st-bubble ul, .st-bubble ol { padding-left: var(--st-s-6); }
+.st-bubble li + li { margin-top: var(--st-s-1); }
+.st-bubble h3 { font-size: var(--st-fs-lg); margin: var(--st-s-4) 0 var(--st-s-2); color: var(--st-ink); }
+.st-bubble h4 { font-size: var(--st-fs-base); margin: var(--st-s-3) 0 var(--st-s-2); color: var(--st-ink); }
+.st-bubble code.inline { font: 400 .9em var(--st-font-mono); background: var(--st-surface-2); border: 1px solid var(--st-line-soft);
+                         border-radius: 6px; padding: 1px 5px; }
+.st-bubble .st-code { margin: var(--st-s-3) 0; }
+.st-bubble blockquote { margin: 0 0 var(--st-s-3); padding-left: var(--st-s-3); border-left: 3px solid var(--st-line);
+                        color: var(--st-ink-muted); }
+.st-bubble hr { border: 0; border-top: 1px solid var(--st-line); margin: var(--st-s-4) 0; }
+.st-msg .st-collapse { width: 100%; }
+.st-collapse__body.thinking { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 420px; overflow-y: auto; }
+.st-msg__meta { font-size: var(--st-fs-xs); color: var(--st-ink-muted); display: flex; gap: 8px; align-items: center; }
+.st-msg__meta .st-btn--icon { width: 28px; height: 28px; }
+.st-msg__meta .st-btn--icon .st-icon { width: 16px; height: 16px; }
+.msg-error { color: var(--st-danger-text); background: var(--st-danger-tint); border-radius: var(--st-r-md);
+             padding: 10px 14px; font-size: var(--st-fs-md); }
+.cursor::after { content: ""; display: inline-block; width: 8px; height: 1.1em; margin-left: 2px; vertical-align: -3px;
+                 border-radius: 2px; background: var(--st-accent); animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.composer-wrap { flex: none; padding: 0 var(--st-s-6) var(--st-s-6); }
+.st-composer { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; padding: 10px;
+               background: var(--st-surface); border: 1px solid var(--st-line); border-radius: var(--st-r-lg);
+               box-shadow: var(--st-sh-bar); }
+.st-composer:focus-within { border-color: var(--st-focus); }
+.st-composer textarea { border: 0; outline: 0; resize: none; background: transparent; color: var(--st-ink);
+                        font: 400 var(--st-fs-base)/1.5 var(--st-font); padding: 6px 8px; min-height: 48px; }
+.st-composer__bar { display: flex; align-items: center; gap: 6px; }
+.st-composer__bar .spacer { flex: 1; }
+.composer-hint { font-size: var(--st-fs-xs); color: var(--st-ink-muted); margin-right: var(--st-s-2);
+                 font-variant-numeric: tabular-nums; }
+
 /* ---------------------------------------------------------------- narrow screens */
 @media (max-width: 1000px) {
   .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
