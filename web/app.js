@@ -113,23 +113,32 @@ function renderState(d) {
 /* ----------------------------------------------------------- metrics */
 function renderMetrics(d) {
   const g = d.gpu || {}, h = d.host || {};
+  const gs = d.gpus || [];
+  const multi = gs.length > 1;
+  const per = (f) => gs.map((x) => `GPU ${x.index} ${f(x)}`).join(" · ");
 
   $("m-speed").innerHTML = fmt(d.speed, 1) + `<span class="st-metric__unit">tok/s</span>`;
   $("m-speed-sub").textContent = d.speed_kind === "prefill" ? "prefill" : d.speed_kind === "decode" ? "decode" : "last request";
 
   $("m-gpu").innerHTML = fmt(g.util) + `<span class="st-metric__unit">%</span>`;
-  $("m-gpu-sub").textContent = (g.name || "no GPU") + (g.count > 1 ? ` · ${g.count} GPUs` : "");
+  $("m-gpu-sub").textContent = multi
+    ? per((x) => (x.util == null ? "–" : `${fmt(x.util)}%`))
+    : (g.name || "no GPU");
 
   const vramUsed = fmtGB(g.mem_used), vramTot = fmtGB(g.mem_total);
   $("m-vram").innerHTML = fmt(vramUsed, 1) + (vramTot ? `<span class="st-metric__unit">/ ${fmt(vramTot, 0)} GB</span>` : "");
   const pfx = d.prefix;
-  $("m-vram-sub").textContent = (pfx && pfx.rate !== null && pfx.rate !== undefined)
-    ? `${fmt(pfx.rate * 100, 0)}% prefix cache reuse` : "—";
+  $("m-vram-sub").textContent = multi
+    ? per((x) => (x.mem_used == null ? "–" : `${fmtGB(x.mem_used)} GB`))
+    : ((pfx && pfx.rate !== null && pfx.rate !== undefined) ? `${fmt(pfx.rate * 100, 0)}% prefix cache reuse` : "—");
   if (vramUsed && vramTot) $("m-vram-bar").style.width = Math.min(100, (vramUsed / vramTot) * 100) + "%";
 
   $("m-temp").innerHTML = fmt(g.temp) + `<span class="st-metric__unit">°C</span>`;
+  $("m-temp").title = multi ? per((x) => (x.temp == null ? "–" : `${fmt(x.temp)}°C`)) : "";
   $("m-power").innerHTML = fmt(g.power) + `<span class="st-metric__unit">W</span>`;
-  $("m-power-sub").textContent = g.power_limit ? `of ${fmt(g.power_limit, 0)} W limit` : "—";
+  $("m-power-sub").textContent = multi
+    ? per((x) => (x.power == null ? "–" : `${fmt(x.power)} W`))
+    : (g.power_limit ? `of ${fmt(g.power_limit, 0)} W limit` : "—");
 
   const gen = g.pcie_gen ? "Gen" + g.pcie_gen : "–";
   $("m-pcie").innerHTML = gen + (g.pcie_width ? `<span class="st-metric__unit">x${g.pcie_width}</span>` : "");

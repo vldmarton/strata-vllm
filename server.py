@@ -486,10 +486,15 @@ def metrics():
         },
         "gpus": [
             {
+                "index": i,
                 "name": g["name"], "util": g["util"],
                 "mem_used": g["mem_used"], "mem_total": g["mem_total"], "temp": g["temp"],
+                "power": g["power"], "power_limit": g["power_limit"],
+                "pcie_gen": (g.get("pcie_gen") or g.get("pcie_gen_max")),
+                "pcie_gen_max": g.get("pcie_gen_max"),
+                "pcie_width": g.get("pcie_width"),
             }
-            for g in gpu.values()
+            for i, g in gpu.items()
         ],
         "host": {
             "cpu": host["cpu"] if host else None,
