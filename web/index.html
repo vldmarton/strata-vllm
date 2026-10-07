@@ -14,10 +14,10 @@
 <header class="st-header">
   <div class="st-header__brand">vLLM</div>
   <nav class="st-tabs" role="tablist" aria-label="Sections">
-    <button class="st-tab" role="tab" aria-selected="true" data-view="chat">
+    <button class="st-tab" role="tab" aria-selected="false" data-view="chat">
       <svg class="st-icon st-icon--sm"><use href="sprite.svg#i-chat"/></svg>Chat
     </button>
-    <button class="st-tab" role="tab" aria-selected="false" data-view="monitor">
+    <button class="st-tab" role="tab" aria-selected="true" data-view="monitor">
       <svg class="st-icon st-icon--sm"><use href="sprite.svg#i-activity"/></svg>Monitor
     </button>
     <button class="st-tab" role="tab" aria-selected="false" data-view="about">
@@ -38,7 +38,7 @@
 
 <main>
   <!-- ================= chat ================= -->
-  <section id="view-chat" class="view--chat" role="tabpanel">
+  <section id="view-chat" class="view--chat" role="tabpanel" hidden>
     <div class="chat-scroll" id="chat-scroll">
       <div class="chat" id="chat">
         <div class="chat-empty" id="chat-empty">
@@ -67,7 +67,7 @@
   </section>
 
   <!-- ================= monitor ================= -->
-  <section id="view-monitor" class="monitor" role="tabpanel" hidden>
+  <section id="view-monitor" class="monitor" role="tabpanel">
 
     <div class="st-card state-card">
       <div class="state-card__head">
