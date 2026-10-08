@@ -150,10 +150,6 @@ function renderMetrics(d) {
     ? per((x) => (x.power == null ? "–" : `${fmt(x.power)} W`))
     : (g.power_limit ? `of ${fmt(g.power_limit, 0)} W limit` : "—");
 
-  const gen = g.pcie_gen ? "Gen"+g.pcie_gen : "–";
-  $("m-pcie").innerHTML = gen + (g.pcie_width ? `<span class="st-metric__unit">x${g.pcie_width}</span>` : "");
-  $("m-pcie-sub").textContent = g.pcie_mb !== null && g.pcie_mb !== undefined ? `to GPU ${fmt(g.pcie_mb, 2)} MB/s` : "—";
-
   $("m-cpu").innerHTML = fmt(h.cpu) + `<span class="st-metric__unit">%</span>`;
   $("m-cpu-sub").textContent = h.cores ? `${h.cores} cores · ${h.threads} threads` : "—";
 
@@ -163,7 +159,6 @@ function renderMetrics(d) {
   /* sparklines (60 s of 1 Hz samples) */
   const H = d.history || {};
   sparkline($("s-speed"), H.tok_s, {});
-  sparkline($("s-pcie"), H.pcie, {});
   sparkline($("s-power"), H.power, {});
   sparkline($("s-cpu"), H.cpu, { max: 100 });
   sparkline($("s-disk"), H.disk, {});

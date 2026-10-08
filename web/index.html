@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>vLLM</title>
-<link rel="stylesheet" href="tokens.css?v=2">
-<link rel="stylesheet" href="components.css?v=2">
-<link rel="stylesheet" href="app.css?v=2">
+<link rel="stylesheet" href="tokens.css?v=3">
+<link rel="stylesheet" href="components.css?v=3">
+<link rel="stylesheet" href="app.css?v=3">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='%2334d399'/%3E%3C/svg%3E">
 </head>
 <body>
@@ -111,21 +111,12 @@
           <div id="s-speed"></div>
         </div>
       </div>
-      <div id="gpu-cards"></div>
       <div class="st-card metric-card">
         <div class="st-metric">
           <span class="st-metric__label"><svg class="st-icon st-icon--sm"><use href="sprite.svg#i-bolt"/></svg>Power</span>
           <span class="st-metric__value" id="m-power">–<span class="st-metric__unit">W</span></span>
           <span class="st-metric__sub" id="m-power-sub">—</span>
           <div id="s-power"></div>
-        </div>
-      </div>
-      <div class="st-card metric-card">
-        <div class="st-metric">
-          <span class="st-metric__label"><svg class="st-icon st-icon--sm"><use href="sprite.svg#i-link"/></svg>PCIe</span>
-          <span class="st-metric__value" id="m-pcie">–</span>
-          <span class="st-metric__sub" id="m-pcie-sub">—</span>
-          <div id="s-pcie"></div>
         </div>
       </div>
       <div class="st-card metric-card">
@@ -144,6 +135,7 @@
           <div id="s-disk"></div>
         </div>
       </div>
+      <div id="gpu-cards"></div>
     </div>
 
     <div class="monitor-row">
@@ -263,6 +255,6 @@
 
 <div class="st-toasts" id="toasts"></div>
 
-<script src="app.js?v=2"></script>
+<script src="app.js?v=3"></script>
 </body>
 </html>
